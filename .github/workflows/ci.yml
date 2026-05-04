@@ -1,0 +1,50 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: ['**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis/redis-stack:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    env:
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+
+    steps:
+      - name: Checkout koda
+        uses: actions/checkout@v4
+
+      - name: Postavi Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instaliraj zavisnosti
+        working-directory: ./payment
+        run: pip install -r requirements.txt
+
+      - name: Unit testovi
+        working-directory: ./payment
+        run: pytest tests/test_unit.py -v
+
+      - name: Integracioni testovi
+        working-directory: ./payment
+        run: pytest tests/test_integration.py -v
+
+      - name: Funkcionalni testovi
+        working-directory: ./payment
+        run: pytest tests/test_functional.py -v

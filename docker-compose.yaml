@@ -1,0 +1,30 @@
+services:
+  redis:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  payment:
+    build: ./payment
+    ports:
+      - "8002:8001"
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  consumer:
+    build: ./consumer
+    command: python consumer.py
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
